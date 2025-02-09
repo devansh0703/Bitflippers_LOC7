@@ -2,13 +2,11 @@ import React, { useState } from 'react';
 import { OrderList } from './components/OrderList';
 import { OrderDetails } from './components/OrderDetails';
 import { OrderForm } from './components/OrderForm';
-import { LandingPage } from './components/LandingPage';
 import { Plus } from 'lucide-react';
 import { calculateRouteDetails } from './utils/routeOptimizer';
 import { generateOrderTips } from './utils/aiTips';
 import type { Order, OrderStatus } from './types';
 import Chatbot from './components/Chatbot';
-
 // Initial sample data
 const initialOrders: Order[] = [
   {
@@ -78,15 +76,10 @@ const initialOrders: Order[] = [
 ];
 
 function App() {
-  const [showDashboard, setShowDashboard] = useState(false);
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  if (!showDashboard) {
-    return <LandingPage onEnterDashboard={() => setShowDashboard(true)} />;
-  }
 
   const handleOrderSelect = async (order: Order) => {
     try {
@@ -133,6 +126,7 @@ function App() {
       })
     );
 
+    // Update selected order if it's the one being modified
     if (selectedOrder?.id === orderId) {
       const updatedOrder = orders.find((o) => o.id === orderId);
       if (updatedOrder) {
@@ -149,38 +143,6 @@ function App() {
     customerWhatsapp: string;
     deadline: string;
     packageWeight: number;
-    customerName: string;
-    customerEmail: string;
-    customerAddress: string;
-    specifications: {
-      isFragile: boolean;
-      requiresRefrigeration: boolean;
-      isHazardous: boolean;
-      dimensions: {
-        length: number;
-        width: number;
-        height: number;
-      };
-      specialInstructions: string;
-      deliveryPreferences: {
-        contactless: boolean;
-        timeWindow: {
-          start: string;
-          end: string;
-        };
-      };
-    };
-    payment: {
-      amount: number;
-      status: PaymentStatus;
-      method: PaymentMethod;
-      paidAmount: number;
-    };
-    assignedDriver: {
-      name: string;
-      phone: string;
-      vehicleNumber: string;
-    };
   }) => {
     setError(null);
     try {
@@ -197,16 +159,26 @@ function App() {
       const newOrder: Order = {
         id: (orders.length + 1).toString(),
         ...orderData,
+        customerName: 'New Customer', // This should come from the form
+        customerAddress: 'Address', // This should come from the form
         status: 'pending',
         createdAt: now,
         updatedAt: now,
         specifications: {
-          ...orderData.specifications,
+          isFragile: false,
+          requiresRefrigeration: false,
+          isHazardous: false,
+          dimensions: {
+            length: 0,
+            width: 0,
+            height: 0,
+          },
         },
         payment: {
-          ...orderData.payment,
-          remainingAmount:
-            orderData.payment.amount - orderData.payment.paidAmount,
+          amount: routeDetails.price,
+          status: 'pending',
+          paidAmount: 0,
+          remainingAmount: routeDetails.price,
           lastUpdated: now,
         },
         routeDetails,
@@ -233,24 +205,19 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-gray-100">
-      <header className="bg-neutral-900 border-b border-red-800">
+    <div className="min-h-screen bg-gray-100">
+      <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-red-500">
-              SwiftShip Dashboard
-            </h1>
-            <span className="px-2 py-1 text-xs bg-red-500/10 text-red-500 rounded-full">
-              Pro
-            </span>
-          </div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Logistics Dashboard
+          </h1>
           {!selectedOrder && !showForm && (
             <button
               onClick={() => {
                 setError(null);
                 setShowForm(true);
               }}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
             >
               <Plus className="w-4 h-4" />
               New Order
@@ -261,8 +228,8 @@ function App() {
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         {error && (
-          <div className="mb-4 p-4 bg-red-900/50 border border-red-800 rounded-md">
-            <p className="text-red-200">{error}</p>
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-red-800">{error}</p>
           </div>
         )}
         {showForm ? (
@@ -282,6 +249,7 @@ function App() {
         ) : (
           <OrderList orders={orders} onOrderSelect={handleOrderSelect} />
         )}
+        {}
         <Chatbot orders={orders} />
       </main>
     </div>
